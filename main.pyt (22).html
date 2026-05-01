@@ -1,0 +1,64 @@
+# fastapi_rag.py - Ayurvedic RAG Backend
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from sentence_transformers import SentenceTransformer
+from qdrant_client import QdrantClient, models
+import json
+import os
+
+app = FastAPI(title="Ayurvedic RAG API")
+
+# Load model
+model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
+qdrant = QdrantClient(":memory:")
+
+# Load knowledge base
+KB_PATH = os.getenv('KB_PATH', 'data.json')
+try:
+    with open(KB_PATH, 'r', encoding='utf-8') as f:
+        KB = json.load(f)
+except:
+    KB = []
+
+class Query(BaseModel):
+    text: str
+    lang: str = "hi"
+    top_k: int = 3
+
+@app.on_event("startup")
+def init_db():
+    if not KB:
+        return
+    qdrant.recreate_collection(
+        collection_name="ayurveda",
+        vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE)
+    )
+    vectors = model.encode([f"{item.get('condition_hindi','')} {item.get('hindi','')}" for item in KB])
+    qdrant.upsert(
+        collection_name="ayurveda",
+        points=models.Batch(
+            ids=list(range(len(KB))),
+            vectors=vectors.tolist(),
+            payloads=KB
+        )
+    )
+
+@app.post("/search")
+def search(query: Query):
+    if not KB:
+        return {"results": [], "disclaimer": "No data loaded"}
+    vec = model.encode(query.text).tolist()
+    results = qdrant.search(
+        collection_name="ayurveda",
+        query_vector=vec,
+        limit=query.top_k
+    )
+    return {
+        "query": query.text,
+        "results": [r.payload for r in results],
+        "disclaimer": "शैक्षिक उद्देश्य मात्र। वैद्य से परामर्श करें।"
+    }
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "shlokas": len(KB)}

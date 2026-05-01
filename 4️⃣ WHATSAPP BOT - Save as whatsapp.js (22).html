@@ -1,0 +1,25 @@
+const express = require('express');
+const app = express();
+app.use(express.urlencoded({extended:true}));
+
+const KB = require('./knowledge.json');
+
+app.post('/whatsapp', (req, res) => {
+  const msg = req.body.Body.toLowerCase();
+  const found = KB.find(k => msg.includes(k.condition_hindi) || k.condition_hindi.includes(msg));
+  
+  let reply = '🙏 वैद्य सहायक\n\n';
+  if(found){
+    reply += `*${found.condition_hindi}*\n\n`;
+    reply += `श्लोक: ${found.sanskrit}\n\n`;
+    reply += `अर्थ: ${found.hindi}\n\n`;
+    reply += `✅ पथ्य: ${found.pathya.join(', ')}\n`;
+    reply += `❌ अपथ्य: ${found.apathya.join(', ')}`;
+  } else {
+    reply += 'कृपया लक्षण भेजें: ज्वर, कास, अजीर्ण';
+  }
+  
+  res.send(`<Response><Message>${reply}</Message></Response>`);
+});
+
+app.listen(3000, () => console.log('WhatsApp bot running'));

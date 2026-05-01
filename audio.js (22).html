@@ -1,0 +1,13 @@
+export const sanskritVoices = {
+  speak: (text, rate = 0.7) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+    const hindiVoice = voices.find(v => v.lang.includes('hi'));
+    if (hindiVoice) utterance.voice = hindiVoice;
+    utterance.lang = 'hi-IN';
+    utterance.rate = rate;
+    window.speechSynthesis.speak(utterance);
+  }
+};

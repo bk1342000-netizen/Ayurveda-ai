@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>वैद्य सहायक</title>
+<meta name="viewport" content="width=device-width">
+<style>
+body{font-family:serif;background:#fdf6e3;margin:0;padding:20px}
+header{text-align:center;border-bottom:4px solid #8B0000;padding:20px}
+h1{color:#8B0000;margin:0}
+input{width:70%;padding:12px;font-size:18px;border:2px solid #DAA520}
+button{background:#8B0000;color:white;padding:12px 20px;border:none;cursor:pointer}
+.card{background:white;padding:20px;margin:20px 0;border-left:4px solid #DAA520}
+.sanskrit{background:#fff8e1;padding:15px;font-size:18px}
+</style>
+</head>
+<body>
+<header>
+<h1>वैद्य सहायक</h1>
+<p>आयुर्वेदिक AI कोच</p>
+</header>
+
+<div style="max-width:800px;margin:40px auto">
+<div style="display:flex;gap:10px">
+<input id="q" placeholder="लक्षण लिखें - ज्वर, कास" onkeypress="if(event.key=='Enter')search()">
+<button onclick="search()">खोजें</button>
+</div>
+<div id="results"></div>
+</div>
+
+<script>
+let kb = [];
+fetch('knowledge.json').then(r=>r.json()).then(d=>kb=d);
+
+function search(){
+const q=document.getElementById('q').value;
+const results=kb.filter(i=>i.condition_hindi.includes(q)||i.hindi.includes(q)).slice(0,3);
+document.getElementById('results').innerHTML=results.map(r=>`
+<div class="card">
+<h3 style="color:#8B0000">${r.condition_hindi}</h3>
+<div class="sanskrit">${r.sanskrit}<br><small>${r.source}</small></div>
+<p><b>अर्थ:</b> ${r.hindi}</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+<div><h4 style="color:green">पथ्य</h4><ul>${r.pathya.map(p=>`<li>${p}</li>`).join('')}</ul></div>
+<div><h4 style="color:red">अपथ्य</h4><ul>${r.apathya.map(a=>`<li>${a}</li>`).join('')}</ul></div>
+</div>
+<button onclick="speechSynthesis.speak(new SpeechSynthesisUtterance('${r.sanskrit}'))">🔊 सुनें</button>
+</div>`).join('');
+}
+</script>
+</body>
+</html>

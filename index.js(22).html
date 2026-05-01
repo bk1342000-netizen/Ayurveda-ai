@@ -1,0 +1,91 @@
+import { useState } from 'react';
+
+export default function Home() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const search = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('http://localhost:8000/search', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({text: query, lang: 'hi', top_k: 3})
+      });
+      const data = await res.json();
+      setResults(data.results || []);
+    } catch (e) {
+      // Fallback to local
+      const local = await fetch('/data/knowledge.json');
+      const kb = await local.json();
+      const filtered = kb.filter(item =>
+        item.condition_hindi?.includes(query) ||
+        item.hindi?.includes(query)
+      ).slice(0,3);
+      setResults(filtered);
+    }
+    setLoading(false);
+  };
+
+  const speak = (text) => {
+    if ('speechSynthesis' in window) {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'hi-IN';
+      utter.rate = 0.7;
+      speechSynthesis.speak(utter);
+    }
+  };
+
+  return (
+    <div style={{fontFamily: 'serif', background: '#fdf6e3', minHeight: '100vh', padding: '20px'}}>
+      <header style={{textAlign: 'center', borderBottom: '4px solid #8B0000', paddingBottom: '20px'}}>
+        <h1 style={{color: '#8B0000', fontSize: '2rem'}}>वैद्य सहायक</h1>
+        <p>शैक्षिक उद्देश्य मात्र</p>
+      </header>
+
+      <div style={{maxWidth: '800px', margin: '40px auto'}}>
+        <div style={{display: 'flex', gap: '10px'}}>
+          <input
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="लक्षण लिखें - ज्वर, सिर दर्द"
+            style={{flex: 1, padding: '12px', fontSize: '18px', border: '2px solid #DAA520'}}
+            onKeyPress={e => e.key === 'Enter' && search()}
+          />
+          <button onClick={search} style={{background: '#8B0000', color: 'white', padding: '12px 24px', border: 'none', cursor: 'pointer'}}>
+            खोजें
+          </button>
+        </div>
+
+        {loading && <p style={{textAlign: 'center', marginTop: '20px'}}>खोज रहे हैं...</p>}
+
+        <div style={{marginTop: '30px'}}>
+          {results.map((r, i) => (
+            <div key={i} style={{background: 'white', padding: '20px', marginBottom: '20px', borderLeft: '4px solid #DAA520', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'}}>
+              <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                <h3 style={{color: '#8B0000'}}>{r.condition_hindi}</h3>
+                <button onClick={() => speak(r.sanskrit)} style={{background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer'}}>🔊</button>
+              </div>
+              <div style={{background: '#fff8e1', padding: '15px', margin: '10px 0'}}>
+                <p style={{fontSize: '18px'}}>{r.sanskrit}</p>
+                <small style={{color: '#666'}}>{r.source}</small>
+              </div>
+              <p><strong>अर्थ:</strong> {r.hindi}</p>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '15px'}}>
+                <div>
+                  <h4 style={{color: 'green'}}>पथ्य</h4>
+                  <ul>{r.pathya?.map((p, idx) => <li key={idx}>{p}</li>)}</ul>
+                </div>
+                <div>
+                  <h4 style={{color: 'red'}}>अपथ्य</h4>
+                  <ul>{r.apathya?.map((a, idx) => <li key={idx}>{a}</li>)}</ul>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
