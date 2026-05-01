@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>वैद्य सहायक</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{font-family:serif;background:#fdf6e3;margin:0;padding:15px}
+header{text-align:center;border-bottom:4px solid #8B0000;padding:15px;background:white}
+h1{color:#8B0000;margin:5px;font-size:1.8rem}
+input{width:65%;padding:12px;font-size:16px;border:2px solid #DAA520;border-radius:4px}
+button{background:#8B0000;color:white;padding:12px 18px;border:none;border-radius:4px;font-weight:bold}
+.card{background:white;padding:15px;margin:15px 0;border-left:4px solid #DAA520;box-shadow:0 2px 5px rgba(0,0,0,0.1);border-radius:4px}
+.sanskrit{background:#fff8e1;padding:12px;font-size:17px;margin:10px 0;border-radius:4px}
+</style>
+</head>
+<body>
+<header>
+<h1>🙏 वैद्य सहायक</h1>
+<p style="margin:5px;color:#666">आयुर्वेदिक AI - शैक्षिक उद्देश्य</p>
+</header>
+
+<div style="max-width:800px;margin:20px auto">
+<div style="display:flex;gap:8px;margin-bottom:20px">
+<input id="q" placeholder="लक्षण लिखें: ज्वर, कास, अजीर्ण" onkeypress="if(event.key=='Enter')search()">
+<button onclick="search()">खोजें</button>
+</div>
+<div id="results"></div>
+</div>
+
+<script>
+const kb=[
+{"condition_hindi":"ज्वर","sanskrit":"ज्वरस्य पूर्वरूपं श्रमोऽरतिर्विवर्णता।","hindi":"ज्वर के पूर्व लक्षण - थकान, बेचैनी, विवर्णता","source":"चरक संहिता","pathya":["मूंग दाल","खिचड़ी","गर्म पानी"],"apathya":["दही","ठंडा पानी","भारी भोजन"]},
+{"condition_hindi":"कास","sanskrit":"कासः पञ्चविधः प्रोक्तो वातपित्तकफैस्त्रिभिः।","hindi":"कास पांच प्रकार का होता है - वात, पित्त, कफ से","source":"अष्टांग हृदय","pathya":["अदरक","शहद","गर्म पानी"],"apathya":["दही","ठंडा","धूम्रपान"]},
+{"condition_hindi":"अजीर्ण","sanskrit":"अजीर्णं भेषजं वारि जीर्णे वारि बलप्रदम्।","hindi":"अजीर्ण में पानी दवा है, पाचन के बाद पानी बल देता है","source":"चरक संहिता","pathya":["अजवाइन","हींग","गर्म पानी"],"apathya":["भारी भोजन","देर रात खाना"]}
+];
+
+function search(){
+const q=document.getElementById('q').value.trim();
+if(!q){return}
+const results=kb.filter(i=>i.condition_hindi.includes(q)||q.includes(i.condition_hindi));
+document.getElementById('results').innerHTML=results.length?results.map(r=>`
+<div class="card">
+<h3 style="color:#8B0000;margin-top:0">${r.condition_hindi}</h3>
+<div class="sanskrit">${r.sanskrit}<br><small style="color:#666">${r.source}</small></div>
+<p><b>अर्थ:</b> ${r.hindi}</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:12px">
+<div><h4 style="color:green;margin:5px 0">✅ पथ्य</h4><ul style="margin:5px;padding-left:20px">${r.pathya.map(p=>`<li>${p}</li>`).join('')}</ul></div>
+<div><h4 style="color:#c00;margin:5px 0">❌ अपथ्य</h4><ul style="margin:5px;padding-left:20px">${r.apathya.map(a=>`<li>${a}</li>`).join('')}</ul></div>
+</div>
+<button onclick="speechSynthesis.speak(new SpeechSynthesisUtterance('${r.sanskrit}'))" style="margin-top:10px;background:#DAA520">🔊 सुनें</button>
+</div>`).join(''):`<p style="text-align:center;color:#666">नहीं मिला। "ज्वर", "कास" या "अजीर्ण" लिखें</p>`;
+}
+</script>
+</body>
+</html>
